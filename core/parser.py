@@ -14,9 +14,9 @@ def parser():
         finish_coor = []
 
         # Convert dataframe to a list and return the matrix
-        for row in df.axes[0]:
+        for row in range(len(df)):
             curr_row = []
-            for col in df.axes[1]:
+            for col in range(len(df.columns)):
                 curr = df.iloc[row][col]
                 if curr == 'x':
                     curr_row.append(1)
@@ -43,6 +43,7 @@ def parser():
     # Error if the file cannot be found
     except FileNotFoundError:
         print("Warning: No file found")
+        exit()
 
 if __name__ == "__main__":
     parser()
