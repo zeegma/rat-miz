@@ -29,8 +29,7 @@ def parser():
                     curr_row.append(0)
                     finish_coor += [row, col]
                 else:
-                    print("Error: Unknown character in the maze. Aborting parsing.")
-                    exit()
+                    raise ValueError("Error: Unknown character in the maze. Aborting parsing.")
 
             # Append the current row to the two-dimensional matrix
             map_matrix.append(curr_row)
@@ -42,8 +41,7 @@ def parser():
                         
     # Error if the file cannot be found
     except FileNotFoundError:
-        print("Warning: No file found")
-        exit()
+        raise FileNotFoundError("Warning: No file found")
 
 if __name__ == "__main__":
     parser()
