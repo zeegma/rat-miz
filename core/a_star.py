@@ -29,6 +29,8 @@ def trace_path(maze, cell_details, current, x_offset, y_offset):
 
     # Animate the path
     for i, cell in enumerate(path):
+        maze.check_pause()
+
         if i > 0 and i < len(path) - 1:
             row, col = cell
             f_score = cell_details[row][col].f
@@ -68,6 +70,9 @@ def a_star_search(maze, x_offset, y_offset):
 
     # Main loop of A* search algorithm
     while open_set:
+        # Check if paused
+        maze.check_pause()
+
         # Get node with the lowest f_score from open set
         _, current = heapq.heappop(open_set)
         current_row, current_col = current
@@ -91,6 +96,9 @@ def a_star_search(maze, x_offset, y_offset):
 
         # For each direction, check the successors (both x and y)
         for direction in directions:
+            # Check if paused before processing each neighbor
+            maze.check_pause()
+
             neighbor_row = current_row + direction[0]
             neighbor_col = current_col + direction[1]
             neighbor = (neighbor_row, neighbor_col)
@@ -129,6 +137,10 @@ def a_star_search(maze, x_offset, y_offset):
 
                     # Visualize neighbor as open
                     if neighbor != goal:
+                        # Check if paused before visualizing
+                        maze.check_pause()
+
+                        # Then visualize if not paused
                         maze.draw_cell(neighbor, colors.OPEN_COLOR, x_offset, y_offset)
                         maze.canvas.update()
                         time.sleep(0.5 / maze.speed_scale.get())
