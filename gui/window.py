@@ -280,6 +280,7 @@ class Maze:
         # Reset solving flag when done
         self.solving_in_progress = False
         self.solve_button.config(state="normal", bg=colors.BUTTON_COLOR, text="Solve")
+        pygame.mixer.stop()
 
         if path_found:
             print("The maze has been solved successfully!")
