@@ -10,3 +10,7 @@ def compute_offset(maze_obj):
     y_offset = max((canvas_height - maze_height) // 2, 0)
 
     return x_offset, y_offset
+
+
+def get_heuristics_breakdown(cell_details, row, col):
+    return cell_details[row][col].g, cell_details[row][col].h, cell_details[row][col].f
