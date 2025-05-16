@@ -5,6 +5,7 @@ from core.a_star import a_star_search
 import gui.colors as colors
 from utils.helpers import compute_offset
 import time
+import pygame
 
 
 class Maze:
@@ -18,7 +19,7 @@ class Maze:
 
         # Sidebar frame (buttons container)
         self.sidebar = tk.Frame(
-            root, bg=colors.BACKGROUND_COLOR_LEFT, width=300, padx=10, pady=10
+            root, bg=colors.BACKGROUND_COLOR_LEFT, width=430, padx=10, pady=10
         )
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
         self.sidebar.pack_propagate(False)
@@ -42,7 +43,7 @@ class Maze:
             font=("Arial", 12),
             relief="flat",
             activebackground=colors.BUTTON_ACTIVE,
-            activeforeground=colors.DEFAULT_WHITE,
+            activeforeground=colors.DEFAULT_BLACK,
             command=self.on_solve_click,
         )
         self.solve_button.pack(fill=tk.X, pady=5)
@@ -56,7 +57,7 @@ class Maze:
             font=("Arial", 12),
             relief="flat",
             activebackground=colors.BUTTON_ACTIVE_PAUSE,
-            activeforeground=colors.DEFAULT_WHITE,
+            activeforeground=colors.DEFAULT_BLACK,
             command=self.on_pause_click,
         )
         self.pause_button.pack(fill=tk.X, pady=5)
@@ -85,6 +86,57 @@ class Maze:
         self.speed_scale.set(50)
         self.speed_scale.pack(fill=tk.X)
 
+        # Decision panel label
+        self.decision_label = tk.Label(
+            self.sidebar,
+            text="A* Decision Log",
+            fg=colors.DEFAULT_WHITE,
+            bg=colors.BACKGROUND_COLOR_LEFT,
+            font=("Arial", 12),
+        )
+        self.decision_label.pack(pady=(5, 5))
+
+        # Create a frame for the decision panel
+        self.decision_frame = tk.Frame(
+            self.sidebar, bg=colors.BACKGROUND_COLOR_RIGHT, bd=1, relief=tk.SUNKEN
+        )
+        self.decision_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0, 10))
+
+        # Add scrollbar to the frame
+        self.decision_scrollbar = tk.Scrollbar(self.decision_frame)
+        self.decision_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Create text widget for decisions
+        self.decision_text = tk.Text(
+            self.decision_frame,
+            bg=colors.BACKGROUND_COLOR_RIGHT,
+            fg=colors.DEFAULT_WHITE,
+            width=28,
+            height=10,
+            yscrollcommand=self.decision_scrollbar.set,
+            font=("Courier", 10),
+            wrap=tk.WORD,
+        )
+        self.decision_text.pack(fill=tk.BOTH, expand=True)
+        self.decision_scrollbar.config(command=self.decision_text.yview)
+
+        # Configure text tags for for logging
+        self.decision_text.tag_configure(
+            "open", background=colors.OPEN_COLOR, foreground=colors.DEFAULT_BLACK
+        )
+        self.decision_text.tag_configure(
+            "closed", background=colors.CLOSED_COLOR, foreground=colors.DEFAULT_BLACK
+        )
+        self.decision_text.tag_configure(
+            "path", background=colors.FINAL_PATH_COLOR, foreground=colors.DEFAULT_BLACK
+        )
+        self.decision_text.tag_configure(
+            "current", background=colors.CURRENT_COLOR, foreground=colors.DEFAULT_BLACK
+        )
+
+        # Make the text widget read only
+        self.decision_text.config(state=tk.DISABLED)
+
         # Canvas frame (maze container)
         self.canvas_frame = tk.Frame(root, bg=colors.BACKGROUND_COLOR_RIGHT)
         self.canvas_frame.pack(fill=tk.BOTH, expand=True)
@@ -101,6 +153,11 @@ class Maze:
         self.cell_size = 15
         self.paused = False
         self.solving_in_progress = False
+
+        # For the sound
+        pygame.mixer.init()
+
+        self.sound = pygame.mixer.Sound("audio/tukso.mp3")
 
         # Load maze after the window loads fully
         self.root.after(50, self.load_maze)
@@ -195,6 +252,9 @@ class Maze:
             )
 
     def on_solve_click(self):
+        # Start the sound
+        self.sound_channel = self.sound.play(-1)
+
         # Reset the maze display before solving
         self.draw_maze()
 
@@ -207,6 +267,9 @@ class Maze:
             bg=colors.BUTTON_COLOR_DISABLED,
             text="Solving",
         )
+
+        # Reset the decision log
+        self.reset_decision_log()
 
         # Calculate offsets for cell placement
         x_offset, y_offset = compute_offset(self)
@@ -228,8 +291,10 @@ class Maze:
             self.paused = not self.paused
             if self.paused:
                 self.pause_button.config(text="Resume", bg=colors.BUTTON_COLOR)
+                pygame.mixer.pause()
             else:
                 self.pause_button.config(text="Pause", bg=colors.BUTTON_COLOR_PAUSE)
+                pygame.mixer.unpause()
 
     def check_pause(self):
         if self.paused:
@@ -237,3 +302,28 @@ class Maze:
             while self.paused:
                 self.root.update()
                 time.sleep(0.1)
+
+    def log_decision(self, cell_pos, g_score, h_score, f_score, status):
+        row, col = cell_pos
+
+        # Enable editing
+        self.decision_text.config(state=tk.NORMAL)
+
+        # Format decision entry
+        entry = (
+            f"({row}, {col}): f(n) = {f_score} <- g(n) = {g_score} + h(n) = {h_score}\n"
+        )
+
+        # Insert at the beginning (newest at top)
+        self.decision_text.insert("1.0", entry, status)
+
+        # Disable editing again
+        self.decision_text.config(state=tk.DISABLED)
+
+        # Update UI
+        self.decision_text.update()
+
+    def reset_decision_log(self):
+        self.decision_text.config(state=tk.NORMAL)
+        self.decision_text.delete("1.0", tk.END)
+        self.decision_text.config(state=tk.DISABLED)
