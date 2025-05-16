@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
 from core.parser import parser
-from core.astar import a_star_search
+from core.a_star import a_star_search
 import gui.colors as colors
 import math
+
 
 class Maze:
     def __init__(self, root):
@@ -42,7 +43,7 @@ class Maze:
             relief="flat",
             activebackground=colors.BUTTON_ACTIVE,
             activeforeground=colors.DEFAULT_WHITE,
-            command=self.on_solve_clicked
+            command=self.on_solve_clicked,
         )
         self.solve_button.pack(fill=tk.X, pady=5)
 
@@ -108,7 +109,7 @@ class Maze:
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
         return "break"
-    
+
     def offset_computation(self):
         # Calculate top padding to visually center maze
         canvas_height = self.canvas.winfo_height()
@@ -121,10 +122,10 @@ class Maze:
         y_offset = max((canvas_height - maze_height) // 2, 0)
 
         return x_offset, y_offset
-    
+
     def distance_formula(self, x1, y1, x2, y2):
-        return math.sqrt((pow(x2-x1, 2))+pow(y2-y1, 2))
-        
+        return math.sqrt((pow(x2 - x1, 2)) + pow(y2 - y1, 2))
+
     def load_maze(self):
         try:
             # Get the maze, the starting, and end position from parser
@@ -170,9 +171,8 @@ class Maze:
         # Update canvas to reflect maze
         self.canvas.update
 
-    def draw_cell(self, position, color, x_offset=0, y_offset=0):
+    def draw_cell(self, position, color, x_offset=0, y_offset=0, value=None):
         # Convert maze cell coordinates to canvas pixel coordinates
-        # (x1, y1) is the top left corner, (x2, y2) is the bottom right corner
         row, col = position
         x1 = col * self.cell_size + x_offset
         y1 = row * self.cell_size + y_offset
@@ -184,52 +184,27 @@ class Maze:
             x1, y1, x2, y2, fill=color, outline=colors.OUTLINE_COLOR
         )
 
-    # When the solve button is clicked, run the algorithm
-    def on_solve_clicked(self):
-        explored_nodes, goal_path = a_star_search(self.maze, self.start_pos, self.end_pos)
+        # Optionally draw value on cell
+        if value is not None:
+            self.canvas.create_text(
+                (x1 + x2) // 2,
+                (y1 + y2) // 2,
+                text=str(value),
+                fill=colors.DEFAULT_WHITE,
+                font=("Helvetica", int(self.cell_size / 3)),
+            )
 
-        # Compute for the offsets again
+    def on_solve_clicked(self):
+        # Reset the maze display before solving
+        self.draw_maze()
+
+        # Calculate offsets for cell placement
         x_offset, y_offset = self.offset_computation()
 
-        # Call an animate nodes method to print out slowly the explored paths and the goal path
-        self.animate_nodes(explored_nodes, goal_path, 0, x_offset, y_offset)
-    
+        # Run the A* algorithm
+        path_found = a_star_search(self, x_offset, y_offset)
 
-    def animate_nodes(self, explored_nodes, goal_path, index, x_offset, y_offset):
-        # Compute for the speed to traverse results
-        speed = 300 // self.speed_scale.get()
-
-        # Explore all explored nodes
-        if index < len(explored_nodes):
-            curr_node = explored_nodes[index]
-
-            # If we are already on the second node of all solutions, we can start changing the last cell's color
-            if index > 0:
-                prev_node = explored_nodes[index - 1]
-                self.draw_cell(prev_node, colors.DEAD_END_COLOR, x_offset, y_offset)
-            
-                # Check if we teleported to another place, then mark the last exploration with a trailing color
-                if self.distance_formula(curr_node[0], curr_node[1], prev_node[0], prev_node[1]) > 1:
-                    self.draw_cell(prev_node, colors.TRAIL_COLOR, x_offset, y_offset)
-                    self.track_nodes.append(prev_node)
-
-            # Check if we reconnected to a tracked dead end
-            for node in self.track_nodes[:]:  # Copy to avoid list mutation issues
-                if self.distance_formula(curr_node[0], curr_node[1], node[0], node[1]) == 1:
-                    self.track_nodes.remove(node)
-                    self.draw_cell(node, colors.DEAD_END_COLOR, x_offset, y_offset)
-
-            # Color out the cell with yellow as the lead color
-            self.draw_cell(explored_nodes[index], colors.END_COLOR, x_offset, y_offset)
-
-            # Do delay animation with speed
-            self.canvas.after(speed, self.animate_nodes, explored_nodes, goal_path, index + 1, x_offset, y_offset)
-
-        # Explore the goal path and display it
-        elif index < len(explored_nodes) + len(goal_path):
-            # Reset path index
-            path_index = index - len(explored_nodes)
-
-            # Color it out as the yellow road 
-            self.draw_cell(goal_path[path_index], colors.END_COLOR, x_offset, y_offset)
-            self.canvas.after(speed, self.animate_nodes, explored_nodes, goal_path, index + 1, x_offset, y_offset)
+        if path_found:
+            print("The maze has been solved successfully!")
+        else:
+            print("Failed to find a path through the maze.")
