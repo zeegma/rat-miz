@@ -34,9 +34,13 @@ class Maze:
         )
         self.title_label.pack(pady=(0, 20))
 
+        # Control buttons frame
+        self.control_frame = tk.Frame(self.sidebar, bg=colors.BACKGROUND_COLOR_LEFT)
+        self.control_frame.pack(fill=tk.X, pady=(0, 20))
+
         # Solve button
         self.solve_button = tk.Button(
-            self.sidebar,
+            self.control_frame,
             text="Solve",
             bg=colors.BUTTON_COLOR,
             fg=colors.DEFAULT_WHITE,
@@ -46,11 +50,12 @@ class Maze:
             activeforeground=colors.DEFAULT_BLACK,
             command=self.on_solve_click,
         )
-        self.solve_button.pack(fill=tk.X, pady=5)
+        self.solve_button.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
 
         # Pause button
         self.pause_button = tk.Button(
-            self.sidebar,
+            self.control_frame,
             text="Pause",
             bg=colors.BUTTON_COLOR_PAUSE,
             fg=colors.DEFAULT_WHITE,
@@ -60,7 +65,7 @@ class Maze:
             activeforeground=colors.DEFAULT_BLACK,
             command=self.on_pause_click,
         )
-        self.pause_button.pack(fill=tk.X, pady=5)
+        self.pause_button.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         # Speed label
         self.speed_label = tk.Label(
