@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, colorchooser
 from core.parser import parser
 from core.a_star import a_star_search
 import gui.colors as colors
@@ -52,7 +52,6 @@ class Maze:
         )
         self.solve_button.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
-
         # Pause button
         self.pause_button = tk.Button(
             self.control_frame,
@@ -67,19 +66,23 @@ class Maze:
         )
         self.pause_button.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
+        # Speed control frame
+        self.speed_frame = tk.Frame(self.sidebar, bg=colors.BACKGROUND_COLOR_LEFT)
+        self.speed_frame.pack(fill=tk.X, pady=(0, 20))
+
         # Speed label
         self.speed_label = tk.Label(
-            self.sidebar,
+            self.speed_frame,
             text="Speed",
             fg=colors.DEFAULT_WHITE,
             bg=colors.BACKGROUND_COLOR_LEFT,
             font=("Arial", 12),
         )
-        self.speed_label.pack(pady=(5, 5))
+        self.speed_label.pack(anchor=tk.CENTER)
 
         # Speed scale
         self.speed_scale = tk.Scale(
-            self.sidebar,
+            self.speed_frame,
             from_=1,
             to=100,
             orient=tk.HORIZONTAL,
@@ -90,6 +93,34 @@ class Maze:
         )
         self.speed_scale.set(50)
         self.speed_scale.pack(fill=tk.X)
+
+        # Color customization frame
+        self.color_frame = tk.Frame(self.sidebar, bg=colors.BACKGROUND_COLOR_LEFT)
+        self.color_frame.pack(fill=tk.X, pady=(0, 20))
+
+        # Wall color button
+        self.wall_color_btn = tk.Button(
+            self.color_frame,
+            text="Wall Color",
+            bg=colors.BUTTON_COLOR,
+            fg=colors.DEFAULT_WHITE,
+            font=("Arial", 10),
+            relief="flat",
+            command=self.choose_wall_color,
+        )
+        self.wall_color_btn.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        # Path color button
+        self.path_color_btn = tk.Button(
+            self.color_frame,
+            text="Path Color",
+            bg=colors.BUTTON_COLOR,
+            fg=colors.DEFAULT_WHITE,
+            font=("Arial", 10),
+            relief="flat",
+            command=self.choose_path_color,
+        )
+        self.path_color_btn.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         # Decision panel label
         self.decision_label = tk.Label(
@@ -167,6 +198,26 @@ class Maze:
         # Load maze after the window loads fully
         self.root.after(50, self.load_maze)
 
+        # Custom color variables
+        self.wall_color = colors.WALL_COLOR  
+        self.path_color = colors.PATH_COLOR 
+        
+    def choose_wall_color(self):
+        """Open color picker for wall color"""
+        color = colorchooser.askcolor(title="Choose Wall Color")[1]
+        if color:
+            self.wall_color = color
+            if hasattr(self, 'maze'):
+                self.draw_maze()
+
+    def choose_path_color(self):
+        """Open color picker for path color"""
+        color = colorchooser.askcolor(title="Choose Path Color")[1]
+        if color:
+            self.path_color = color
+            if hasattr(self, 'maze'):
+                self.draw_maze()
+
     def end_fullscreen(self, event=None):
         self.state = False
         self.root.attributes("-fullscreen", False)
@@ -217,10 +268,10 @@ class Maze:
             for col in range(self.cols):
                 if self.maze[row][col] == 1:
                     # If its 1 then its a wall so color it with wall color
-                    self.draw_cell([row, col], colors.WALL_COLOR, x_offset, y_offset)
+                    self.draw_cell([row, col], self.wall_color, x_offset, y_offset)
                 else:
                     # Else color it as path
-                    self.draw_cell([row, col], colors.PATH_COLOR, x_offset, y_offset)
+                    self.draw_cell([row, col], self.path_color, x_offset, y_offset)
 
         # Color starting position differently
         if self.start_pos:
