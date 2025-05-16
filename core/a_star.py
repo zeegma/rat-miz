@@ -2,6 +2,7 @@ import heapq
 import time
 import gui.colors as colors
 from core.cell import Cell
+from utils.helpers import get_heuristics_breakdown
 
 
 def heuristic(a, b):
@@ -29,12 +30,18 @@ def trace_path(maze, cell_details, current, x_offset, y_offset):
 
     # Animate the path
     for i, cell in enumerate(path):
+        # Check if process is paused
         maze.check_pause()
 
+        # Animate path excluding start and goal
         if i > 0 and i < len(path) - 1:
             row, col = cell
-            f_score = cell_details[row][col].f
-            maze.draw_cell(cell, colors.FINAL_PATH_COLOR, x_offset, y_offset, f_score)
+
+            # Log path node
+            g, h, f = get_heuristics_breakdown(cell_details, row, col)
+            maze.log_decision(cell, g, h, f, "path")
+
+            maze.draw_cell(cell, colors.FINAL_PATH_COLOR, x_offset, y_offset, f)
             maze.canvas.update()
             time.sleep(1.0 / maze.speed_scale.get())
 
@@ -76,6 +83,14 @@ def a_star_search(maze, x_offset, y_offset):
         # Get node with the lowest f_score from open set
         _, current = heapq.heappop(open_set)
         current_row, current_col = current
+
+        # Log the current node decision
+        current_g, current_h, current_f = get_heuristics_breakdown(
+            cell_details, current_row, current_col
+        )
+
+        if current != start and current != goal:
+            maze.log_decision(current, current_g, current_h, current_f, "current")
 
         # If goal is reached, reconstruct and animate the path
         if current == goal:
@@ -140,6 +155,12 @@ def a_star_search(maze, x_offset, y_offset):
                         # Check if paused before visualizing
                         maze.check_pause()
 
+                        # Log the open node decision
+                        n_g, n_h, n_f = get_heuristics_breakdown(
+                            cell_details, neighbor_row, neighbor_col
+                        )
+                        maze.log_decision(neighbor, n_g, n_h, n_f, "open")
+
                         # Then visualize if not paused
                         maze.draw_cell(neighbor, colors.OPEN_COLOR, x_offset, y_offset)
                         maze.canvas.update()
@@ -147,10 +168,19 @@ def a_star_search(maze, x_offset, y_offset):
 
         # Mark current node as closed except start or goal
         if current != start and current != goal:
-            current_f_score = cell_details[current_row][current_col].f
+            current_g_score, current_h_score, current_f_score = (
+                get_heuristics_breakdown(cell_details, current_row, current_col)
+            )
+
             maze.draw_cell(
                 current, colors.CLOSED_COLOR, x_offset, y_offset, current_f_score
             )
+
+            # Log the closed node decision
+            maze.log_decision(
+                current, current_g_score, current_h_score, current_f_score, "closed"
+            )
+
             maze.canvas.update()
 
     # If we get here, there is no path
