@@ -3,7 +3,7 @@ from tkinter import messagebox
 from core.parser import parser
 from core.a_star import a_star_search
 import gui.colors as colors
-import math
+from utils.helpers import compute_offset
 
 
 class Maze:
@@ -14,7 +14,6 @@ class Maze:
         self.root.attributes("-fullscreen", True)
         self.root.eval("tk::PlaceWindow . center")
         self.root.bind("<Escape>", self.end_fullscreen)
-        self.track_nodes = []
 
         # Sidebar frame (buttons container)
         self.sidebar = tk.Frame(
@@ -110,22 +109,6 @@ class Maze:
 
         return "break"
 
-    def offset_computation(self):
-        # Calculate top padding to visually center maze
-        canvas_height = self.canvas.winfo_height()
-        canvas_width = self.canvas.winfo_width()
-
-        maze_height = self.rows * self.cell_size
-        maze_width = self.cols * self.cell_size
-
-        x_offset = max((canvas_width - maze_width) // 2, 0)
-        y_offset = max((canvas_height - maze_height) // 2, 0)
-
-        return x_offset, y_offset
-
-    def distance_formula(self, x1, y1, x2, y2):
-        return math.sqrt((pow(x2 - x1, 2)) + pow(y2 - y1, 2))
-
     def load_maze(self):
         try:
             # Get the maze, the starting, and end position from parser
@@ -148,7 +131,7 @@ class Maze:
         self.canvas.delete("all")
 
         # Then pass these offsets each time a cell is created to visually center it
-        x_offset, y_offset = self.offset_computation()
+        x_offset, y_offset = compute_offset(self)
 
         # Loop through the cells to draw them
         for row in range(self.rows):
@@ -162,11 +145,11 @@ class Maze:
 
         # Color starting position differently
         if self.start_pos:
-            self.draw_cell(self.start_pos, colors.START_COLOR, x_offset, y_offset)
+            self.draw_cell(self.start_pos, colors.START_COLOR, x_offset, y_offset, "S")
 
         # And ending position as well
         if self.end_pos:
-            self.draw_cell(self.end_pos, colors.END_COLOR, x_offset, y_offset)
+            self.draw_cell(self.end_pos, colors.END_COLOR, x_offset, y_offset, "G")
 
         # Update canvas to reflect maze
         self.canvas.update
@@ -190,8 +173,8 @@ class Maze:
                 (x1 + x2) // 2,
                 (y1 + y2) // 2,
                 text=str(value),
-                fill=colors.DEFAULT_WHITE,
-                font=("Helvetica", int(self.cell_size / 3)),
+                fill=colors.DEFAULT_BLACK,
+                font=("Arial", int(self.cell_size / 3)),
             )
 
     def on_solve_clicked(self):
@@ -199,7 +182,7 @@ class Maze:
         self.draw_maze()
 
         # Calculate offsets for cell placement
-        x_offset, y_offset = self.offset_computation()
+        x_offset, y_offset = compute_offset(self)
 
         # Run the A* algorithm
         path_found = a_star_search(self, x_offset, y_offset)
