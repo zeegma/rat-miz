@@ -4,6 +4,7 @@ from core.parser import parser
 from core.a_star import a_star_search
 import gui.colors as colors
 from utils.helpers import compute_offset
+import time
 
 
 class Maze:
@@ -17,7 +18,7 @@ class Maze:
 
         # Sidebar frame (buttons container)
         self.sidebar = tk.Frame(
-            root, bg=colors.BACKGROUND_COLOR_LEFT, width=250, padx=10, pady=10
+            root, bg=colors.BACKGROUND_COLOR_LEFT, width=300, padx=10, pady=10
         )
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
         self.sidebar.pack_propagate(False)
@@ -25,36 +26,50 @@ class Maze:
         # Title label
         self.title_label = tk.Label(
             self.sidebar,
-            text="Rat Maze",
+            text="Rat Maze with A*",
             font=("Arial", 18, "bold"),
             fg=colors.DEFAULT_WHITE,
             bg=colors.BACKGROUND_COLOR_LEFT,
         )
         self.title_label.pack(pady=(0, 20))
 
-        # Solve Button
+        # Solve button
         self.solve_button = tk.Button(
             self.sidebar,
-            text="Solve with A*",
+            text="Solve",
             bg=colors.BUTTON_COLOR,
             fg=colors.DEFAULT_WHITE,
             font=("Arial", 12),
             relief="flat",
             activebackground=colors.BUTTON_ACTIVE,
             activeforeground=colors.DEFAULT_WHITE,
-            command=self.on_solve_clicked,
+            command=self.on_solve_click,
         )
         self.solve_button.pack(fill=tk.X, pady=5)
+
+        # Pause button
+        self.pause_button = tk.Button(
+            self.sidebar,
+            text="Pause",
+            bg=colors.BUTTON_COLOR_PAUSE,
+            fg=colors.DEFAULT_WHITE,
+            font=("Arial", 12),
+            relief="flat",
+            activebackground=colors.BUTTON_ACTIVE_PAUSE,
+            activeforeground=colors.DEFAULT_WHITE,
+            command=self.on_pause_click,
+        )
+        self.pause_button.pack(fill=tk.X, pady=5)
 
         # Speed label
         self.speed_label = tk.Label(
             self.sidebar,
-            text="Speed:",
+            text="Speed",
             fg=colors.DEFAULT_WHITE,
             bg=colors.BACKGROUND_COLOR_LEFT,
-            font=("Arial", 10),
+            font=("Arial", 12),
         )
-        self.speed_label.pack(pady=(20, 5))
+        self.speed_label.pack(pady=(5, 5))
 
         # Speed scale
         self.speed_scale = tk.Scale(
@@ -84,6 +99,8 @@ class Maze:
         self.start_pos = None
         self.end_pos = None
         self.cell_size = 15
+        self.paused = False
+        self.solving_in_progress = False
 
         # Load maze after the window loads fully
         self.root.after(50, self.load_maze)
@@ -177,9 +194,19 @@ class Maze:
                 font=("Arial", int(self.cell_size / 3)),
             )
 
-    def on_solve_clicked(self):
+    def on_solve_click(self):
         # Reset the maze display before solving
         self.draw_maze()
+
+        # Set solving flag and reset pause state
+        self.solving_in_progress = True
+        self.paused = False
+        self.pause_button.config(text="Pause", bg=colors.BUTTON_COLOR_PAUSE)
+        self.solve_button.config(
+            state="disabled",
+            bg=colors.BUTTON_COLOR_DISABLED,
+            text="Solving",
+        )
 
         # Calculate offsets for cell placement
         x_offset, y_offset = compute_offset(self)
@@ -187,7 +214,26 @@ class Maze:
         # Run the A* algorithm
         path_found = a_star_search(self, x_offset, y_offset)
 
+        # Reset solving flag when done
+        self.solving_in_progress = False
+        self.solve_button.config(state="normal", bg=colors.BUTTON_COLOR, text="Solve")
+
         if path_found:
             print("The maze has been solved successfully!")
         else:
             print("Failed to find a path through the maze.")
+
+    def on_pause_click(self):
+        if self.solving_in_progress:
+            self.paused = not self.paused
+            if self.paused:
+                self.pause_button.config(text="Resume", bg=colors.BUTTON_COLOR)
+            else:
+                self.pause_button.config(text="Pause", bg=colors.BUTTON_COLOR_PAUSE)
+
+    def check_pause(self):
+        if self.paused:
+            # Wait until unpaused
+            while self.paused:
+                self.root.update()
+                time.sleep(0.1)
