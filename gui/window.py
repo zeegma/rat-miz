@@ -102,7 +102,7 @@ class Maze:
         self.wall_color_btn = tk.Button(
             self.color_frame,
             text="Wall Color",
-            bg="#f579c3",
+            bg="#5f5c5e",
             fg=colors.DEFAULT_WHITE,
             font=("Arial", 10),
             relief="flat",
@@ -114,7 +114,7 @@ class Maze:
         self.path_color_btn = tk.Button(
             self.color_frame,
             text="Path Color",
-            bg="#59e4e8",
+            bg="#5f5c5e",
             fg=colors.DEFAULT_WHITE,
             font=("Arial", 10),
             relief="flat",
